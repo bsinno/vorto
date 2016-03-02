@@ -51,6 +51,8 @@ public class DefaultMappingContext implements IMappingContext {
 		this.allMappingModels.add(mappingModel);
 	}
 
+	
+
 	@Override
 	public List<MappingRule> getMappingRulesByOperation(Operation operation) {
 		List<MappingRule> mappingRules = new ArrayList<>();
