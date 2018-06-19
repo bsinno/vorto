@@ -357,6 +357,9 @@ public class ModelRepositoryController extends AbstractRepositoryController {
 	}
 
 	private String getFileName(ModelInfo modelResource) {
+		if (modelResource.getType().equals(ModelType.Extended)) {
+			return modelResource.getId().getName() + ".ttl";
+		}
 		return modelResource.getId().getName() + modelResource.getType().getExtension();
 	}
 
