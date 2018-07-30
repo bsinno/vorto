@@ -19,6 +19,7 @@ import org.eclipse.vorto.repository.core.FileContent;
 import org.eclipse.vorto.repository.core.IModelRepository;
 import org.eclipse.vorto.repository.core.impl.UserContext;
 import org.eclipse.vorto.repository.web.api.v1.dto.AttachResult;
+import org.eclipse.vorto.repository.web.exception.VortoViewException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,26 +51,23 @@ public class AttachmentController {
 	
 	@Autowired
 	private IModelRepository modelRepository;
-	
+
 	@ApiOperation(value = "Upload a file to be attached to a model")
 	@RequestMapping(method = RequestMethod.PUT, value = "/{modelId:.+}", produces = "application/json")
 	@PreAuthorize("isAuthenticated() && (hasRole('ROLE_ADMIN') or hasPermission(T(org.eclipse.vorto.repository.api.ModelId).fromPrettyFormat(#modelId),'model:owner'))")
 	public AttachResult attach(
-			@ApiParam(value = "The ID of the vorto model in namespace.name:version format, e.g. com.mycompany.MagneticSensor:1.0.0", required = true) @PathVariable String modelId, 
+			@ApiParam(value = "The ID of the vorto model in namespace.name:version format, e.g. com.mycompany.MagneticSensor:1.0.0", required = true) @PathVariable String modelId,
 			@ApiParam(value = "The file to be uploaded as attachmment", required = true) @RequestParam("file") MultipartFile file) {
 		
 		ModelId modelID = ModelId.fromPrettyFormat(modelId);
-			
+
 		try {
 			String fileName = URLDecoder.decode(file.getOriginalFilename(), "UTF-8");
-			
-			if (fileName.length() > 100) {
-				return AttachResult.fail(modelID, fileName, "Name of File exceeds 100 Characters");
-			}		
+
 			modelRepository.attachFile(modelID, new FileContent(fileName, file.getBytes()), getUserContext(),guessTagsFromFileExtension(fileName));
-			
+
 			return AttachResult.success(modelID, fileName);
-		} catch (IOException | FatalModelRepositoryException e) {
+		} catch (IOException | FatalModelRepositoryException | VortoViewException e) {
 			LOGGER.error("Error while uploading []:", e);
 			return AttachResult.fail(modelID, file.getOriginalFilename(), e.getMessage());
 		}
@@ -93,7 +91,7 @@ public class AttachmentController {
 		
 		ModelId modelID = ModelId.fromPrettyFormat(modelId);
 		
-		try {			
+		try {
 			return modelRepository.getAttachments(modelID);
 		} catch (FatalModelRepositoryException e) {
 			LOGGER.error("Error while getting attachments []:", e);
@@ -109,11 +107,11 @@ public class AttachmentController {
 			final HttpServletResponse response) {
 		
 		ModelId modelID = ModelId.fromPrettyFormat(modelId);
-		
+
 		try {
 			String fileName = URLDecoder.decode(filename, "UTF-8");
 			Optional<FileContent> content = modelRepository.getAttachmentContent(modelID, fileName);
-			
+
 			if (content.isPresent()) {
 				response.setHeader(CONTENT_DISPOSITION, ATTACHMENT_FILENAME + fileName);
 				response.setContentType(APPLICATION_OCTET_STREAM);
@@ -138,11 +136,11 @@ public class AttachmentController {
 		
 		try {
 			String fileName = URLDecoder.decode(filename, "UTF-8");
-			
+
 			if (!modelRepository.deleteAttachment(modelIdObject, fileName)) {
 				return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 			}
-			
+
 			return new ResponseEntity<>(HttpStatus.OK);
 		} catch (UnsupportedEncodingException e) {
 			LOGGER.error("Cannot decode name of attachment:", e);
