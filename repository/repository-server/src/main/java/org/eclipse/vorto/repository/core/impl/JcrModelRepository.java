@@ -17,6 +17,7 @@ package org.eclipse.vorto.repository.core.impl;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -62,6 +63,8 @@ import org.eclipse.vorto.repository.core.impl.parser.ModelParserFactory;
 import org.eclipse.vorto.repository.core.impl.utils.ModelIdHelper;
 import org.eclipse.vorto.repository.core.impl.utils.ModelReferencesHelper;
 import org.eclipse.vorto.repository.core.impl.utils.ModelSearchUtil;
+import org.eclipse.vorto.repository.web.attachment.AttachmentValidator;
+import org.eclipse.vorto.repository.web.exception.VortoViewException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -86,6 +89,9 @@ public class JcrModelRepository implements IModelRepository {
 	private ModelSearchUtil modelSearchUtil;
 
 	private static Logger logger = Logger.getLogger(JcrModelRepository.class);
+
+	@Autowired
+	private AttachmentValidator attachmentValidator;
 
 	@Override
 	public List<ModelInfo> search(final String expression) {
@@ -514,7 +520,11 @@ public class JcrModelRepository implements IModelRepository {
 	}
 
 	@Override
-	public boolean attachFile(ModelId modelId, FileContent fileContent, IUserContext userContext, Tag... tags) {
+	public boolean attachFile(ModelId modelId, FileContent fileContent, IUserContext userContext, Tag... tags) throws UnsupportedEncodingException, VortoViewException {
+
+		attachmentValidator.validateFileLength(fileContent);
+		attachmentValidator.validateAttachment(fileContent);
+
 		try {
 			ModelIdHelper modelIdHelper = new ModelIdHelper(modelId);
 			Node modelFolderNode = session.getNode(modelIdHelper.getFullPath());

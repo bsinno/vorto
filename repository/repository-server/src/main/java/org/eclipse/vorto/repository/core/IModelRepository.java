@@ -14,6 +14,7 @@
  */
 package org.eclipse.vorto.repository.core;
 
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,6 +23,7 @@ import org.eclipse.vorto.repository.api.ModelInfo;
 import org.eclipse.vorto.repository.api.attachment.Attachment;
 import org.eclipse.vorto.repository.api.attachment.Tag;
 import org.eclipse.vorto.repository.api.exception.ModelNotFoundException;
+import org.eclipse.vorto.repository.web.exception.VortoViewException;
 
 /**
  * 
@@ -116,9 +118,10 @@ public interface IModelRepository {
 	 * @param content the content of the file
 	 * @param userContext the user context
 	 * @param tags attachment tags 
-	 * @return status whether the file was attached or not 
+	 * @return status whether the file was attached or not
+     * @throws VortoViewException in case of wrong attachment
 	 */
-	boolean attachFile(ModelId modelid, FileContent fileContent, IUserContext userContext, Tag...Tags);
+	boolean attachFile(ModelId modelid, FileContent fileContent, IUserContext userContext, Tag...Tags) throws UnsupportedEncodingException, VortoViewException;;
 	
 	/**
 	 * Gets a list of attachments for the model (without its content)
