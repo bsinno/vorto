@@ -4,6 +4,7 @@ pipeline {
       stage("Build"){
         steps{
           githubNotify context: 'Building PR', description: 'Building pull request',  status: 'PENDING', targetUrl: ""
+	    // This is a test comment to be removed
             // Maven installation declared in the Jenkins "Global Tool Configuration"
             withMaven(
                 maven: 'maven-latest',
