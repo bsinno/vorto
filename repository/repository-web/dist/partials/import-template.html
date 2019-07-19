@@ -23,7 +23,7 @@
 				</div>
 				<div class="button-box col-md-6 text-right">
 					<a ng-show="!isLoading  || (isLoading && beingCheckedIn)" ng-click="uploadModel()" ng-disabled="!fileAdded || (isLoading && !showCheckin)"
-					 class="btn btn-primary uploadImportButton" role="button">
+					 class="btn btn-primary uploadImportButton disabled" role="button">
 						<span class="glyphicon glyphicon-upload"></span> Upload</a>
 					<a ng-show="isLoading && beingUploaded" ng-disabled="isLoading" class="btn btn-primary uploadImportButton" role="button">
 						<i class='fa fa-refresh fa-spin'></i> Upload</a>
