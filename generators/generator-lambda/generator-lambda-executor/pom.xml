@@ -107,10 +107,17 @@
 
 		<dependency>
 			<groupId>org.eclipse.vorto</groupId>
+			<artifactId>generator-webofthings</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
+
+		<dependency>
+			<groupId>org.eclipse.vorto</groupId>
 			<artifactId>hono</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.eclipse.vorto</groupId>
 			<artifactId>generator-template</artifactId>

@@ -17,14 +17,15 @@
 	<packaging>pom</packaging>
 
 	<modules>
-		<module>generator-boschiotsuite</module>
-		<module>generator-eclipsehono</module>
-		<module>generator-eclipseditto</module>
-		<module>generator-openapi</module>
-		<module>generator-jsonschema</module>
-		<module>generator-runner</module>
-		<module>generator-lambda</module>
-	</modules>
+    <module>generator-boschiotsuite</module>
+    <module>generator-eclipsehono</module>
+    <module>generator-eclipseditto</module>
+    <module>generator-openapi</module>
+    <module>generator-jsonschema</module>
+    <module>generator-runner</module>
+    <module>generator-lambda</module>
+    <module>generator-webofthings</module>
+  </modules>
 
 	<build>
 		<pluginManagement>

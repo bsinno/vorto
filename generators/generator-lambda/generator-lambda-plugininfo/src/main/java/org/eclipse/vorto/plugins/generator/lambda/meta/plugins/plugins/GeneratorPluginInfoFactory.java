@@ -25,7 +25,8 @@ public class GeneratorPluginInfoFactory {
   private static final EclipseHonoPluginInfo eclipsehonoPlugin = new EclipseHonoPluginInfo();
   private static final BoschIoTSuitePluginInfo boschiotsuitePlugin = new BoschIoTSuitePluginInfo();
   private static final OpenAPIPluginInfo openApiPlugin = new OpenAPIPluginInfo();
-  private static final JsonSchemaPluginInfo jsonSchemaPlugin = new  JsonSchemaPluginInfo();
+  private static final JsonSchemaPluginInfo jsonSchemaPlugin = new JsonSchemaPluginInfo();
+  private static final WebOfThingsPluginInfo WEB_OF_THINGS_PLUGIN_INFO = new WebOfThingsPluginInfo();
   
   
   private final static Map<String, GeneratorPluginInfo> infos = new HashMap<String, GeneratorPluginInfo>();
@@ -36,6 +37,7 @@ public class GeneratorPluginInfoFactory {
     infos.put(boschiotsuitePlugin.getInfo().getKey(),boschiotsuitePlugin.getInfo());
     infos.put(openApiPlugin.getInfo().getKey(), openApiPlugin.getInfo());
     infos.put(jsonSchemaPlugin.getInfo().getKey(), jsonSchemaPlugin.getInfo());
+    infos.put(WEB_OF_THINGS_PLUGIN_INFO.getInfo().getKey(), WEB_OF_THINGS_PLUGIN_INFO.getInfo());
   }
   
   private GeneratorPluginInfoFactory() {
