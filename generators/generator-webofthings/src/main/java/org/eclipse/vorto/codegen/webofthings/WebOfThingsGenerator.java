@@ -12,7 +12,9 @@
 package org.eclipse.vorto.codegen.webofthings;
 
 import java.util.ArrayList;
-import org.eclipse.vorto.core.api.model.informationmodel.FunctionblockProperty;
+import java.util.Objects;
+import java.util.Optional;
+import org.eclipse.vorto.core.api.model.functionblock.FunctionBlock;
 import org.eclipse.vorto.core.api.model.informationmodel.InformationModel;
 import org.eclipse.vorto.plugin.generator.GeneratorPluginInfo;
 import org.eclipse.vorto.plugin.generator.ICodeGenerator;
@@ -23,7 +25,9 @@ import org.eclipse.vorto.plugin.generator.utils.SingleGenerationResult;
 import org.json.JSONObject;
 import org.mozilla.iot.webthing.Action;
 import org.mozilla.iot.webthing.Event;
+import org.mozilla.iot.webthing.Property;
 import org.mozilla.iot.webthing.Thing;
+import org.mozilla.iot.webthing.Value;
 
 public class WebOfThingsGenerator implements ICodeGenerator {
 
@@ -39,19 +43,37 @@ public class WebOfThingsGenerator implements ICodeGenerator {
         model.getNamespace() + ":" + model.getName() + ":" + model.getVersion(),
         model.getDisplayname());
 
-    model.getProperties().stream().map(FunctionblockProperty::getExtendedFunctionBlock)
-        .forEach(fb -> {
-          fb.getEvents().forEach(e -> webThing
-              .addEvent(new Event<>(webThing, e.getName(), new ArrayList<>(e.getProperties()))));
-          fb.getOperations().forEach(o -> {
-            JSONObject metaData = new JSONObject();
-            metaData.put("description", o.getDescription());
-            metaData.put("label", o.getName());
-            metaData.put("params", "TODO");
-            webThing.addAvailableAction(o.getName(), metaData, Action.class);
-          });
+    model.getProperties().forEach(fb -> {
+        Optional<FunctionBlock> extendedFunctionBlock = Optional.ofNullable(fb.getExtendedFunctionBlock());
+      Value<String> v = new Value("");
+      Property<String> p = new Property<>(webThing, fb.getType().getNamespace() + ":" + fb.getName() + ":" + fb.getType().getVersion(), v);
+      webThing.addProperty(p);
 
-        });
+      extendedFunctionBlock.ifPresent(efb -> {
+        Optional.ofNullable(efb.getEvents())
+            .ifPresent(events -> events
+                .stream()
+                .filter(Objects::nonNull)
+                .forEach(e -> webThing.addEvent(new Event<>(webThing, e.getName(), new ArrayList<>(e.getProperties())))));
+        Optional.ofNullable(efb.getOperations())
+            .ifPresent(operations -> operations
+                .stream()
+                .filter(Objects::nonNull)
+                .forEach(o -> {
+                  JSONObject metaData = new JSONObject();
+                  metaData.put("description", o.getDescription());
+                  metaData.put("label", o.getName());
+                  metaData.put("params", "TODO");
+                  webThing.addAvailableAction(o.getName(), metaData, Action.class);
+                }));
+        Optional.ofNullable(efb.getStatus()).ifPresent(status -> status.getProperties()
+            .stream()
+            .filter(Objects::nonNull)
+            .forEach(statusProperty -> {
+              // TODO
+        }));
+      });
+    });
 
     Generated generated = new Generated("thingdefinition.json", "/",
         webThing.asThingDescription().toString().getBytes());
