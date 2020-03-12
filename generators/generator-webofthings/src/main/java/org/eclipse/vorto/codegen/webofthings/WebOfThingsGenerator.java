@@ -36,8 +36,8 @@ public class WebOfThingsGenerator implements ICodeGenerator {
         version = loadVersionFromResources();
     }
 
-    @Override public IGenerationResult generate(InformationModel model, InvocationContext context) {
-        String result = null;
+    @Override
+    public IGenerationResult generate(InformationModel model, InvocationContext context) {
         ObjectNode thingTemplate = newObjectNode();
         thingTemplate.put("@context", "https://www.w3.org/2019/wot/td/v1");
         thingTemplate.put("@type", "ThingTemplate");
@@ -52,22 +52,11 @@ public class WebOfThingsGenerator implements ICodeGenerator {
 
     private void addPropertiesNode(InformationModel model, ObjectNode thingTemplate) {
         ObjectNode properties = newObjectNode();
-        model.getProperties().forEach(functionblockProperty -> {
-
-            String functionblockName = functionblockProperty.getName();
-            String functionblockDescription = functionblockProperty.getDescription();
-            if (Objects.nonNull(functionblockProperty.getPresence())) {
-                boolean isFunctionblockMandatory =
-                    functionblockProperty.getPresence().isMandatory();
-            }
-            boolean isFunctionblockMultiplicity = functionblockProperty.isMultiplicity();
-
-
-            Optional.ofNullable(functionblockProperty.getType())
+        model.getProperties().forEach(
+            functionblockProperty -> Optional.ofNullable(functionblockProperty.getType())
                 .map(FunctionblockModel::getFunctionblock).map(FunctionBlock::getStatus).ifPresent(
-                status -> status.getProperties()
-                    .forEach(statusProperty -> addStatusNode(properties, statusProperty)));
-        });
+                    status -> status.getProperties()
+                        .forEach(statusProperty -> addStatusNode(properties, statusProperty))));
         thingTemplate.set("properties", properties);
     }
 
@@ -79,14 +68,11 @@ public class WebOfThingsGenerator implements ICodeGenerator {
                 .ifPresent(fbEvents -> fbEvents.forEach(event -> {
                     ObjectNode eventNode = newObjectNode();
                     String eventName = event.getName();
-                    event.getProperties().forEach(eventProperty -> {
-                        String eventPropertyName = eventProperty.getName();
-                        String eventPropertyDescription = eventProperty.getDescription();
-                        eventProperty.getConstraintRule().getConstraints().forEach(
+                    event.getProperties().forEach(
+                        eventProperty -> eventProperty.getConstraintRule().getConstraints().forEach(
                             eventConstraint -> putIfNotNull(eventNode,
                                 eventConstraint.getType().getName(),
-                                eventConstraint.getConstraintValues()));
-                    });
+                                eventConstraint.getConstraintValues())));
                     events.set(eventName, eventNode);
                 })));
         thingTemplate.set("events", events);
@@ -94,8 +80,8 @@ public class WebOfThingsGenerator implements ICodeGenerator {
 
     private void addActionsNode(InformationModel model, ObjectNode thingTemplate) {
         ObjectNode actions = newObjectNode();
-        model.getProperties().forEach(functionblockProperty -> {
-            Optional.ofNullable(functionblockProperty.getType())
+        model.getProperties().forEach(
+            functionblockProperty -> Optional.ofNullable(functionblockProperty.getType())
                 .map(FunctionblockModel::getFunctionblock).map(FunctionBlock::getOperations)
                 .ifPresent(operations -> operations.forEach(operation -> {
                     ObjectNode operationNode = newObjectNode();
@@ -108,8 +94,7 @@ public class WebOfThingsGenerator implements ICodeGenerator {
                     putIfNotNull(operationNode, "breakable", String.valueOf(operationBreakable));
                     putIfNotNull(operationNode, "extension", String.valueOf(operationExtension));
                     actions.set(operationName, operationNode);
-                }));
-        });
+                })));
         thingTemplate.set("actions", actions);
     }
 
@@ -131,15 +116,16 @@ public class WebOfThingsGenerator implements ICodeGenerator {
     }
 
     private IGenerationResult createResult(String result) {
-        Generated generated = new Generated("thingdefinition.json", "/", result);
+        Generated generated = new Generated("thingdefinitiontemplate.json", "/", result);
         SingleGenerationResult generationResult = new SingleGenerationResult("application/json");
         generationResult.write(generated);
         return generationResult;
     }
 
-    @Override public GeneratorPluginInfo getMeta() {
+    @Override
+    public GeneratorPluginInfo getMeta() {
         return GeneratorPluginInfo.Builder("webofthings")
-            .withDescription("Generates the Web of Things Thing Description")
+            .withDescription("Generates the Web of Things Thing Description Template")
             .withName("Web of Things").withVendor("Eclipse Vorto Team").withPluginVersion(version)
             .build();
     }
