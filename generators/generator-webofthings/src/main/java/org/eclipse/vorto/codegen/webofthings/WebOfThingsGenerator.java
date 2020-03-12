@@ -43,23 +43,14 @@ public class WebOfThingsGenerator implements ICodeGenerator {
         thingTemplate.put("@type", "ThingTemplate");
         thingTemplate.put("title", model.getName() + " Thing Description Template");
 
-        createPropertiesNode(model, thingTemplate);
+        addPropertiesNode(model, thingTemplate);
         addActionsNode(model, thingTemplate);
-
-
-
-        ObjectNode events = newObjectNode();
-
-
-
-        thingTemplate.set("events", events);
-
-
+        addEventsNode(model, thingTemplate);
 
         return createResult(thingTemplate.toString());
     }
 
-    private void createPropertiesNode(InformationModel model, ObjectNode thingTemplate) {
+    private void addPropertiesNode(InformationModel model, ObjectNode thingTemplate) {
         ObjectNode properties = newObjectNode();
         model.getProperties().forEach(functionblockProperty -> {
 
@@ -82,8 +73,8 @@ public class WebOfThingsGenerator implements ICodeGenerator {
 
     private void addEventsNode(InformationModel model, ObjectNode thingTemplate) {
         ObjectNode events = newObjectNode();
-        model.getProperties().forEach(functionblockProperty -> {
-            Optional.ofNullable(functionblockProperty.getType())
+        model.getProperties().forEach(
+            functionblockProperty -> Optional.ofNullable(functionblockProperty.getType())
                 .map(FunctionblockModel::getFunctionblock).map(FunctionBlock::getEvents)
                 .ifPresent(fbEvents -> fbEvents.forEach(event -> {
                     ObjectNode eventNode = newObjectNode();
@@ -97,8 +88,7 @@ public class WebOfThingsGenerator implements ICodeGenerator {
                                 eventConstraint.getConstraintValues()));
                     });
                     events.set(eventName, eventNode);
-                }));
-        });
+                })));
         thingTemplate.set("events", events);
     }
 
