@@ -83,11 +83,18 @@ public class WebOfThingsGenerator implements ICodeGenerator {
         ObjectNode eventNode = newObjectNode();
         String eventName = event.getName();
         event.getProperties().forEach(
-            eventProperty -> eventProperty.getConstraintRule().getConstraints().forEach(
-                eventConstraint -> putIfNotNull(eventNode,
-                    eventConstraint.getType().getName(),
-                    eventConstraint.getConstraintValues())));
+            eventProperty -> addEventPropertiesToNode(eventNode, eventProperty));
         events.set(eventName, eventNode);
+    }
+
+    private void addEventPropertiesToNode(ObjectNode eventNode, Property eventProperty) {
+        ObjectNode eventPropertyNode = newObjectNode();
+        eventProperty.getConstraintRule().getConstraints().forEach(
+            eventConstraint -> putIfNotNull(eventPropertyNode,
+                eventConstraint.getType().getName(),
+                eventConstraint.getConstraintValues()));
+        putIfNotNull(eventPropertyNode, DESCRIPTION, eventProperty.getDescription());
+        eventNode.set(eventProperty.getName(), eventPropertyNode);
     }
 
     private void addActionsNode(InformationModel model, ObjectNode thingTemplate) {
@@ -128,19 +135,21 @@ public class WebOfThingsGenerator implements ICodeGenerator {
         properties.set(statusName, statusPropertyNode);
     }
 
+    @Override
+    public GeneratorPluginInfo getMeta() {
+        return GeneratorPluginInfo.Builder(KEY)
+            .withDescription("Generates the Web of Things Thing Description Template")
+            .withName("Web of Things")
+            .withVendor("Eclipse Vorto Team")
+            .withPluginVersion(version)
+            .build();
+    }
+
     private IGenerationResult createResult(String result) {
         Generated generated = new Generated("thingdefinitiontemplate.json", "/", result);
         SingleGenerationResult generationResult = new SingleGenerationResult("application/json");
         generationResult.write(generated);
         return generationResult;
-    }
-
-    @Override
-    public GeneratorPluginInfo getMeta() {
-        return GeneratorPluginInfo.Builder(KEY)
-            .withDescription("Generates the Web of Things Thing Description Template")
-            .withName("Web of Things").withVendor("Eclipse Vorto Team").withPluginVersion(version)
-            .build();
     }
 
     private void putIfNotNull(ObjectNode node, String name, String value) {
