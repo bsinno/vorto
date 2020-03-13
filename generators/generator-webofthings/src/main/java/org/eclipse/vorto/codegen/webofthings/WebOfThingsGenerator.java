@@ -14,8 +14,7 @@ package org.eclipse.vorto.codegen.webofthings;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.eclipse.vorto.core.api.model.datatype.ConstraintRule;
 import org.eclipse.vorto.core.api.model.datatype.Property;
-import org.eclipse.vorto.core.api.model.functionblock.FunctionBlock;
-import org.eclipse.vorto.core.api.model.functionblock.FunctionblockModel;
+import org.eclipse.vorto.core.api.model.functionblock.*;
 import org.eclipse.vorto.core.api.model.informationmodel.InformationModel;
 import org.eclipse.vorto.plugin.generator.GeneratorPluginInfo;
 import org.eclipse.vorto.plugin.generator.ICodeGenerator;
@@ -25,12 +24,27 @@ import org.eclipse.vorto.plugin.generator.adapter.ObjectMapperFactory;
 import org.eclipse.vorto.plugin.generator.utils.Generated;
 import org.eclipse.vorto.plugin.generator.utils.SingleGenerationResult;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class WebOfThingsGenerator implements ICodeGenerator {
 
     private final String version;
+
+    private static final String KEY = "webofthings";
+
+    private static final String DESCRIPTION = "description";
+
+    private static final Function<FunctionBlock, List<Event>> EVENT_FUNCTION =
+        FunctionBlock::getEvents;
+
+    private static final Function<FunctionBlock, Status> STATUS_FUNCTION = FunctionBlock::getStatus;
+
+    private static final Function<FunctionBlock, List<Operation>> OPERATION_FUNCTION =
+        FunctionBlock::getOperations;
 
     public WebOfThingsGenerator() {
         version = loadVersionFromResources();
@@ -52,53 +66,52 @@ public class WebOfThingsGenerator implements ICodeGenerator {
 
     private void addPropertiesNode(InformationModel model, ObjectNode thingTemplate) {
         ObjectNode properties = newObjectNode();
-        model.getProperties().forEach(
-            functionblockProperty -> Optional.ofNullable(functionblockProperty.getType())
-                .map(FunctionblockModel::getFunctionblock).map(FunctionBlock::getStatus).ifPresent(
-                    status -> status.getProperties()
-                        .forEach(statusProperty -> addStatusNode(properties, statusProperty))));
+        Consumer<Status> addNodeForEachStatusConsumer = status -> status.getProperties()
+            .forEach(statusProperty -> addNodeForEachStatus(properties, statusProperty));
+        processModel(model, STATUS_FUNCTION, addNodeForEachStatusConsumer);
         thingTemplate.set("properties", properties);
     }
 
     private void addEventsNode(InformationModel model, ObjectNode thingTemplate) {
         ObjectNode events = newObjectNode();
-        model.getProperties().forEach(
-            functionblockProperty -> Optional.ofNullable(functionblockProperty.getType())
-                .map(FunctionblockModel::getFunctionblock).map(FunctionBlock::getEvents)
-                .ifPresent(fbEvents -> fbEvents.forEach(event -> {
-                    ObjectNode eventNode = newObjectNode();
-                    String eventName = event.getName();
-                    event.getProperties().forEach(
-                        eventProperty -> eventProperty.getConstraintRule().getConstraints().forEach(
-                            eventConstraint -> putIfNotNull(eventNode,
-                                eventConstraint.getType().getName(),
-                                eventConstraint.getConstraintValues())));
-                    events.set(eventName, eventNode);
-                })));
+        processModel(model, EVENT_FUNCTION,
+            fbEvents -> fbEvents.forEach(event -> addEventNode(events, event)));
         thingTemplate.set("events", events);
+    }
+
+    private void addEventNode(ObjectNode events, Event event) {
+        ObjectNode eventNode = newObjectNode();
+        String eventName = event.getName();
+        event.getProperties().forEach(
+            eventProperty -> eventProperty.getConstraintRule().getConstraints().forEach(
+                eventConstraint -> putIfNotNull(eventNode,
+                    eventConstraint.getType().getName(),
+                    eventConstraint.getConstraintValues())));
+        events.set(eventName, eventNode);
     }
 
     private void addActionsNode(InformationModel model, ObjectNode thingTemplate) {
         ObjectNode actions = newObjectNode();
-        model.getProperties().forEach(
-            functionblockProperty -> Optional.ofNullable(functionblockProperty.getType())
-                .map(FunctionblockModel::getFunctionblock).map(FunctionBlock::getOperations)
-                .ifPresent(operations -> operations.forEach(operation -> {
-                    ObjectNode operationNode = newObjectNode();
-                    String operationName = operation.getName();
-                    String operationDescription = operation.getDescription();
-                    boolean operationBreakable = operation.isBreakable();
-                    boolean operationExtension = operation.isExtension();
-
-                    putIfNotNull(operationNode, "description", operationDescription);
-                    putIfNotNull(operationNode, "breakable", String.valueOf(operationBreakable));
-                    putIfNotNull(operationNode, "extension", String.valueOf(operationExtension));
-                    actions.set(operationName, operationNode);
-                })));
+        Consumer<List<Operation>> addNodeForEachOperationConsumer = operations -> operations
+            .forEach(operation -> addNodeForEachOperation(actions, operation));
+        processModel(model, OPERATION_FUNCTION, addNodeForEachOperationConsumer);
         thingTemplate.set("actions", actions);
     }
 
-    private void addStatusNode(ObjectNode properties, Property statusProperty) {
+    private void addNodeForEachOperation(ObjectNode actions, Operation operation) {
+        ObjectNode operationNode = newObjectNode();
+        String operationName = operation.getName();
+        String operationDescription = operation.getDescription();
+        boolean operationBreakable = operation.isBreakable();
+        boolean operationExtension = operation.isExtension();
+
+        putIfNotNull(operationNode, DESCRIPTION, operationDescription);
+        putIfNotNull(operationNode, "breakable", String.valueOf(operationBreakable));
+        putIfNotNull(operationNode, "extension", String.valueOf(operationExtension));
+        actions.set(operationName, operationNode);
+    }
+
+    private void addNodeForEachStatus(ObjectNode properties, Property statusProperty) {
         ObjectNode statusPropertyNode = newObjectNode();
         String statusName = statusProperty.getName();
         String statusDescription = statusProperty.getDescription();
@@ -110,7 +123,7 @@ public class WebOfThingsGenerator implements ICodeGenerator {
         statusProperty.getPropertyAttributes().forEach(statusPropertyAttribute -> {
             String statusPropertyAtttributeString = statusPropertyAttribute.toString();
         });
-        putIfNotNull(statusPropertyNode, "description", statusDescription);
+        putIfNotNull(statusPropertyNode, DESCRIPTION, statusDescription);
         putIfNotNull(statusPropertyNode, "mandatory", String.valueOf(isStatusMandatory));
         properties.set(statusName, statusPropertyNode);
     }
@@ -124,7 +137,7 @@ public class WebOfThingsGenerator implements ICodeGenerator {
 
     @Override
     public GeneratorPluginInfo getMeta() {
-        return GeneratorPluginInfo.Builder("webofthings")
+        return GeneratorPluginInfo.Builder(KEY)
             .withDescription("Generates the Web of Things Thing Description Template")
             .withName("Web of Things").withVendor("Eclipse Vorto Team").withPluginVersion(version)
             .build();
@@ -137,5 +150,14 @@ public class WebOfThingsGenerator implements ICodeGenerator {
 
     private ObjectNode newObjectNode() {
         return ObjectMapperFactory.getInstance().createObjectNode();
+    }
+
+    private <T> void processModel(InformationModel model, Function<FunctionBlock, T> function,
+        Consumer<T> consumer) {
+        model.getProperties().forEach(
+            functionblockProperty -> Optional.ofNullable(functionblockProperty.getType())
+                .map(FunctionblockModel::getFunctionblock)
+                .map(function)
+                .ifPresent(consumer));
     }
 }
