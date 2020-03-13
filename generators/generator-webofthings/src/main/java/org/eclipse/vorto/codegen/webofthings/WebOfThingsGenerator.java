@@ -12,7 +12,6 @@
 package org.eclipse.vorto.codegen.webofthings;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.eclipse.vorto.core.api.model.datatype.ConstraintRule;
 import org.eclipse.vorto.core.api.model.datatype.Property;
 import org.eclipse.vorto.core.api.model.functionblock.*;
 import org.eclipse.vorto.core.api.model.informationmodel.InformationModel;
@@ -45,6 +44,7 @@ public class WebOfThingsGenerator implements ICodeGenerator {
 
     private static final Function<FunctionBlock, List<Operation>> OPERATION_FUNCTION =
         FunctionBlock::getOperations;
+
 
     public WebOfThingsGenerator() {
         version = loadVersionFromResources();
@@ -107,32 +107,21 @@ public class WebOfThingsGenerator implements ICodeGenerator {
 
     private void addNodeForEachOperation(ObjectNode actions, Operation operation) {
         ObjectNode operationNode = newObjectNode();
-        String operationName = operation.getName();
-        String operationDescription = operation.getDescription();
-        boolean operationBreakable = operation.isBreakable();
-        boolean operationExtension = operation.isExtension();
-
-        putIfNotNull(operationNode, DESCRIPTION, operationDescription);
-        putIfNotNull(operationNode, "breakable", String.valueOf(operationBreakable));
-        putIfNotNull(operationNode, "extension", String.valueOf(operationExtension));
-        actions.set(operationName, operationNode);
+        putIfNotNull(operationNode, DESCRIPTION, operation.getDescription());
+        putIfNotNull(operationNode, "breakable", String.valueOf(operation.isBreakable()));
+        putIfNotNull(operationNode, "extension", String.valueOf(operation.isExtension()));
+        actions.set(operation.getName(), operationNode);
     }
 
     private void addNodeForEachStatus(ObjectNode properties, Property statusProperty) {
         ObjectNode statusPropertyNode = newObjectNode();
-        String statusName = statusProperty.getName();
-        String statusDescription = statusProperty.getDescription();
-        boolean isStatusMandatory = statusProperty.getPresence().isMandatory();
-        ConstraintRule statusConstraintRule = statusProperty.getConstraintRule();
-        statusConstraintRule.getConstraints().forEach(
+        statusProperty.getConstraintRule().getConstraints().forEach(
             statusConstraint -> putIfNotNull(statusPropertyNode,
                 statusConstraint.getType().getName(), statusConstraint.getConstraintValues()));
-        statusProperty.getPropertyAttributes().forEach(statusPropertyAttribute -> {
-            String statusPropertyAtttributeString = statusPropertyAttribute.toString();
-        });
-        putIfNotNull(statusPropertyNode, DESCRIPTION, statusDescription);
-        putIfNotNull(statusPropertyNode, "mandatory", String.valueOf(isStatusMandatory));
-        properties.set(statusName, statusPropertyNode);
+        putIfNotNull(statusPropertyNode, DESCRIPTION, statusProperty.getDescription());
+        putIfNotNull(statusPropertyNode, "mandatory",
+            String.valueOf(statusProperty.getPresence().isMandatory()));
+        properties.set(statusProperty.getName(), statusPropertyNode);
     }
 
     @Override
