@@ -19,6 +19,7 @@ import org.eclipse.vorto.codegen.jsonschema.JSONSchemaGenerator;
 import org.eclipse.vorto.codegen.openapi.OpenAPIGenerator;
 import org.eclipse.vorto.codegen.spi.config.AbstractGeneratorConfiguration;
 import org.eclipse.vorto.codegen.spi.model.Generator;
+import org.eclipse.vorto.codegen.webofthings.WebOfThingsGenerator;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -36,6 +37,8 @@ public class GeneratorConfiguration extends AbstractGeneratorConfiguration {
 				Generator.create("/generators/openapi.properties", new CodeGeneratorV1Adapter(new OpenAPIGenerator())));
 		addGenerator(Generator.create("/generators/jsonschema.properties",
 				new CodeGeneratorV1Adapter(new JSONSchemaGenerator())));
+		addGenerator(Generator.create("/generators/webofthings.properties",
+				new CodeGeneratorV1Adapter(new WebOfThingsGenerator())));
 	}
 
 }

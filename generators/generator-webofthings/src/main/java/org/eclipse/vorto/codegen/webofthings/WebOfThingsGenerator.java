@@ -11,6 +11,7 @@
  */
 package org.eclipse.vorto.codegen.webofthings;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.eclipse.vorto.core.api.model.datatype.Property;
 import org.eclipse.vorto.core.api.model.functionblock.*;
@@ -61,7 +62,11 @@ public class WebOfThingsGenerator implements ICodeGenerator {
         addActionsNode(model, thingTemplate);
         addEventsNode(model, thingTemplate);
 
-        return createResult(thingTemplate.toString());
+        try {
+            return createResult(ObjectMapperFactory.getInstance().writerWithDefaultPrettyPrinter().writeValueAsString(thingTemplate));
+        } catch (JsonProcessingException e) {
+            return createResult(thingTemplate.toString());
+        }
     }
 
     private void addPropertiesNode(InformationModel model, ObjectNode thingTemplate) {

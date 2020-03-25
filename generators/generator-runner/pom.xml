@@ -133,8 +133,14 @@
 			<artifactId>generator-openapi</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+        <dependency>
+            <groupId>org.eclipse.vorto</groupId>
+            <artifactId>generator-webofthings</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
 
-	</dependencies>
+    </dependencies>
 
 	<dependencyManagement>
 		<dependencies>
