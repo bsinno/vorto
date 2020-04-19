@@ -24,6 +24,7 @@
 		<module>generator-jsonschema</module>
 		<module>generator-runner</module>
 		<module>generator-lambda</module>
+		<module>importer-webofthings</module>
 	</modules>
 
 	<build>
