@@ -12,6 +12,9 @@
 package org.eclipse.vorto.codegen.webofthings;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.eclipse.vorto.core.api.model.datatype.Property;
 import org.eclipse.vorto.core.api.model.functionblock.*;
@@ -54,7 +57,10 @@ public class WebOfThingsGenerator implements ICodeGenerator {
     @Override
     public IGenerationResult generate(InformationModel model, InvocationContext context) {
         ObjectNode thingTemplate = newObjectNode();
-        thingTemplate.put("@context", "https://www.w3.org/2019/wot/td/v1");
+        ArrayNode contextNode = new ArrayNode(new JsonNodeFactory(false));
+        contextNode.add("https://www.w3.org/2019/wot/td/v1");
+        contextNode.add("https://vorto.eclipse.org");
+        thingTemplate.set("@context", contextNode);
         thingTemplate.put("@type", "ThingTemplate");
         thingTemplate.put("title", model.getName() + " Thing Description Template");
 
