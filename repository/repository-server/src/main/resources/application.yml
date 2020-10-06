@@ -136,3 +136,4 @@ config:
   restrictTenant: 1 # deprecated
   privateNamespaceQuota: 1
   requestTimeoutInSeconds: 300
+  enableDBTableAutoInitialization: true

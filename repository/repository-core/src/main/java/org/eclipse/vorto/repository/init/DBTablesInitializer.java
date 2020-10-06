@@ -12,21 +12,19 @@
  */
 package org.eclipse.vorto.repository.init;
 
-import org.eclipse.vorto.repository.domain.NamespaceRole;
-import org.eclipse.vorto.repository.domain.Privilege;
-import org.eclipse.vorto.repository.domain.RepositoryRole;
-import org.eclipse.vorto.repository.repositories.NamespaceRoleRepository;
-import org.eclipse.vorto.repository.repositories.PrivilegeRepository;
-import org.eclipse.vorto.repository.repositories.RepositoryRoleRepository;
+import org.eclipse.vorto.repository.init.migration.MigrationTaskChain;
+import org.eclipse.vorto.repository.init.migration.PopulateDefaultNamespaceRoles;
+import org.eclipse.vorto.repository.init.migration.PopulateDefaultPrivileges;
+import org.eclipse.vorto.repository.init.migration.PopulateDefaultRepositoryRoles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-
-import java.util.Arrays;
 
 /**
  * This class hooks up at repository initialization, autowires the 3 repositories where
@@ -42,27 +40,43 @@ public class DBTablesInitializer implements ApplicationRunner {
   private final Logger LOGGER = LoggerFactory.getLogger(getClass());
 
   @Autowired
-  private PrivilegeRepository privilegeRepository;
+  private JdbcTemplate template;
 
-  @Autowired
-  private NamespaceRoleRepository namespaceRoleRepository;
-
-  @Autowired
-  private RepositoryRoleRepository repositoryRoleRepository;
+  @Value("${config.enableDBTableAutoInitialization:#{true}}")
+  private boolean enableDBTableAutoInitialization;
 
   @Override
   public void run(ApplicationArguments applicationArguments) {
-    if (privilegeRepository.findAll().isEmpty()) {
+
+    LOGGER.info(
+        String.format(
+            "Automatic DB table initialization enabled? %b",
+            enableDBTableAutoInitialization
+        )
+    );
+
+    if (enableDBTableAutoInitialization) {
+      MigrationTaskChain.startWith(
+          template,
+          PopulateDefaultPrivileges.class,
+          PopulateDefaultNamespaceRoles.class,
+          PopulateDefaultRepositoryRoles.class
+      );
+    }
+
+    /*if (privilegeRepository.findAll().isEmpty()) {
       LOGGER.debug("Found privileges table empty - populating with default values.");
       Arrays.stream(Privilege.DEFAULT_PRIVILEGES).forEach(privilegeRepository::save);
-    }
-    if (namespaceRoleRepository.findAll().isEmpty()) {
+    }*/
+    /*if (namespaceRoleRepository.findAll().isEmpty()) {
       LOGGER.debug("Found namespace roles table empty - populating with default values.");
       Arrays.stream(NamespaceRole.DEFAULT_NAMESPACE_ROLES).forEach(namespaceRoleRepository::save);
-    }
-    if (repositoryRoleRepository.findAll().isEmpty()) {
+    }*/
+    /*if (repositoryRoleRepository.findAll().isEmpty()) {
       LOGGER.debug("Found repository roles table empty - populating with default values.");
-      Arrays.stream(RepositoryRole.DEFAULT_REPOSITORY_ROLES).forEach(repositoryRoleRepository::save);
-    }
+      Arrays.stream(RepositoryRole.DEFAULT_REPOSITORY_ROLES)
+          .forEach(repositoryRoleRepository::save);
+    }*/
   }
+
 }

@@ -34,7 +34,7 @@ import java.util.Objects;
     DEFAULT_PRIVILEGES = new Privilege[]{
         new Privilege(1, "readonly"),
         new Privilege(2, "readwrite"),
-        new Privilege(3, "admin")
+        new Privilege(4, "admin")
     };
   }
 
