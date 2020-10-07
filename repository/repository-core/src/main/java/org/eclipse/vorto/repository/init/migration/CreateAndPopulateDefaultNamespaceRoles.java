@@ -18,33 +18,58 @@ import org.eclipse.vorto.repository.domain.NamespaceRole;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 
-public class PopulateDefaultNamespaceRoles extends MigrationTask {
+public class CreateAndPopulateDefaultNamespaceRoles extends MigrationTask {
 
-  public PopulateDefaultNamespaceRoles(final MigrationTaskChain chain) {
+  public CreateAndPopulateDefaultNamespaceRoles(final MigrationTaskChain chain) {
     super(chain);
   }
 
   @Override
   public boolean verify() {
-    int namespaceRolesCount = template()
-        .queryForObject("select count(*) from namespace_roles", Integer.class);
+    boolean applicable;
+    // checks table actually exists - hardly ever useful unless hibernate props are changed, since
+    // tables should be automatically created based on entities otherwise
+    boolean namespaceRolesTableExists = template()
+        .queryForObject(
+            "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_NAME = 'namespace_roles'",
+            Integer.class) == 1;
+    // does not exist - task applicable and returning
+    if (!namespaceRolesTableExists) {
+      applicable = true;
+      chain().logger().info(
+          String.format(
+              "%s task found no namespace roles table. Task applicable? %b ",
+              getClass().getSimpleName(),
+              applicable
+          )
+      );
+    }
+    // table exists
+    else {
+      // comparing number of namespace roles in table vs defaults
+      int namespaceRolesCount = template()
+          .queryForObject("SELECT COUNT(*) FROM namespace_roles", Integer.class);
 
-    boolean applicable = namespaceRolesCount != NamespaceRole.DEFAULT_NAMESPACE_ROLES.length;
-    chain().logger().info(
-        String.format(
-            "%s task found %d namespace roles in table. Task applicable? %b ",
-            getClass().getSimpleName(),
-            namespaceRolesCount,
-            applicable
-        )
-    );
+      applicable = namespaceRolesCount != NamespaceRole.DEFAULT_NAMESPACE_ROLES.length;
+      chain().logger().info(
+          String.format(
+              "%s task found %d namespace roles in table. Task applicable? %b ",
+              getClass().getSimpleName(),
+              namespaceRolesCount,
+              applicable
+          )
+      );
+    }
     return applicable;
   }
 
   @Override
   public boolean run() {
     try {
-      // assuming no exception means insert successful
+      // assuming no exception means create / insert successful
+      template().execute(
+          "CREATE TABLE IF NOT EXISTS namespace_roles(role BIGINT NOT NULL PRIMARY KEY UNIQUE CHECK ( role & (role - 1) = 0 ), name VARCHAR(64) NOT NULL UNIQUE, privileges BIGINT NOT NULL DEFAULT 0);"
+      );
       // TODO could be improved by granularly inserting only missing defaults
       template()
           .batchUpdate(
@@ -80,6 +105,6 @@ public class PopulateDefaultNamespaceRoles extends MigrationTask {
 
   @Override
   public String getDescription() {
-    return "Populates the namespace_roles table with default values if empty";
+    return "Creates and populates the namespace_roles table with default values if missing / empty";
   }
 }

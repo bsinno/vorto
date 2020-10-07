@@ -13,9 +13,9 @@
 package org.eclipse.vorto.repository.init;
 
 import org.eclipse.vorto.repository.init.migration.MigrationTaskChain;
-import org.eclipse.vorto.repository.init.migration.PopulateDefaultNamespaceRoles;
-import org.eclipse.vorto.repository.init.migration.PopulateDefaultPrivileges;
-import org.eclipse.vorto.repository.init.migration.PopulateDefaultRepositoryRoles;
+import org.eclipse.vorto.repository.init.migration.CreateAndPopulateDefaultNamespaceRoles;
+import org.eclipse.vorto.repository.init.migration.CreateAndPopulateDefaultPrivileges;
+import org.eclipse.vorto.repository.init.migration.CreateAndPopulateDefaultRepositoryRoles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,25 +58,12 @@ public class DBTablesInitializer implements ApplicationRunner {
     if (enableDBTableAutoInitialization) {
       MigrationTaskChain.startWith(
           template,
-          PopulateDefaultPrivileges.class,
-          PopulateDefaultNamespaceRoles.class,
-          PopulateDefaultRepositoryRoles.class
+          CreateAndPopulateDefaultPrivileges.class,
+          CreateAndPopulateDefaultNamespaceRoles.class,
+          CreateAndPopulateDefaultRepositoryRoles.class
       );
     }
 
-    /*if (privilegeRepository.findAll().isEmpty()) {
-      LOGGER.debug("Found privileges table empty - populating with default values.");
-      Arrays.stream(Privilege.DEFAULT_PRIVILEGES).forEach(privilegeRepository::save);
-    }*/
-    /*if (namespaceRoleRepository.findAll().isEmpty()) {
-      LOGGER.debug("Found namespace roles table empty - populating with default values.");
-      Arrays.stream(NamespaceRole.DEFAULT_NAMESPACE_ROLES).forEach(namespaceRoleRepository::save);
-    }*/
-    /*if (repositoryRoleRepository.findAll().isEmpty()) {
-      LOGGER.debug("Found repository roles table empty - populating with default values.");
-      Arrays.stream(RepositoryRole.DEFAULT_REPOSITORY_ROLES)
-          .forEach(repositoryRoleRepository::save);
-    }*/
   }
 
 }

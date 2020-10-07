@@ -17,6 +17,10 @@ import java.util.Objects;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+/**
+ * Represents a sequential orchestrator for database migration or sanitization tasks. <br/>
+ * Invoke with static {@link MigrationTaskChain#startWith(JdbcTemplate, Class[])}.
+ */
 public class MigrationTaskChain {
 
   private static final Logger LOGGER = Logger.getLogger(MigrationTaskChain.class);

@@ -18,33 +18,58 @@ import org.eclipse.vorto.repository.domain.RepositoryRole;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 
-public class PopulateDefaultRepositoryRoles extends MigrationTask {
+public class CreateAndPopulateDefaultRepositoryRoles extends MigrationTask {
 
-  public PopulateDefaultRepositoryRoles(final MigrationTaskChain chain) {
+  public CreateAndPopulateDefaultRepositoryRoles(final MigrationTaskChain chain) {
     super(chain);
   }
 
   @Override
   public boolean verify() {
-    int repositoryRolesCount = template()
-        .queryForObject("select count(*) from repository_roles", Integer.class);
+    boolean applicable;
+    // checks table actually exists - hardly ever useful unless hibernate props are changed, since
+    // tables should be automatically created based on entities otherwise
+    boolean repositoryRolesTableExists = template()
+        .queryForObject(
+            "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_NAME = 'namespace_roles'",
+            Integer.class) == 1;
+    // does not exist - task applicable and returning
+    if (!repositoryRolesTableExists) {
+      applicable = true;
+      chain().logger().info(
+          String.format(
+              "%s task found no repositoryF roles table. Task applicable? %b ",
+              getClass().getSimpleName(),
+              applicable
+          )
+      );
+    }
+    // table exists
+    else {
+      // comparing number of repository roles in table vs defaults
+      int repositoryRolesCount = template()
+          .queryForObject("SELECT COUNT(*) FROM repository_roles", Integer.class);
 
-    boolean applicable = repositoryRolesCount != RepositoryRole.DEFAULT_REPOSITORY_ROLES.length;
-    chain().logger().info(
-        String.format(
-            "%s task found %d repository roles in table. Task applicable? %b ",
-            getClass().getSimpleName(),
-            repositoryRolesCount,
-            applicable
-        )
-    );
+      applicable = repositoryRolesCount != RepositoryRole.DEFAULT_REPOSITORY_ROLES.length;
+      chain().logger().info(
+          String.format(
+              "%s task found %d repository roles in table. Task applicable? %b ",
+              getClass().getSimpleName(),
+              repositoryRolesCount,
+              applicable
+          )
+      );
+    }
     return applicable;
   }
 
   @Override
   public boolean run() {
     try {
-      // assuming no exception means insert successful
+      // assuming no exception means create / insert successful
+      template().execute(
+          "CREATE TABLE IF NOT EXISTS repository_roles(role BIGINT NOT NULL PRIMARY KEY UNIQUE CHECK ( role & (role - 1) = 0 ), name VARCHAR(64) NOT NULL UNIQUE, privileges BIGINT NOT NULL DEFAULT 0);"
+      );
       // TODO could be improved by granularly inserting only missing defaults
       template()
           .batchUpdate(
@@ -80,7 +105,7 @@ public class PopulateDefaultRepositoryRoles extends MigrationTask {
 
   @Override
   public String getDescription() {
-    return "Populates the repository_roles table with default values if empty";
+    return "Creates and populates the repository_roles table with default values if missing / empty";
   }
 
 }
