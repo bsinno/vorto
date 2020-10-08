@@ -12,6 +12,9 @@
  */
 package org.eclipse.vorto.repository.init.migration;
 
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
@@ -29,13 +32,40 @@ public abstract class MigrationTask {
 
   protected final MigrationTaskChain chain;
   protected boolean failed = false;
+  // allows passing boolean values from one phase (e.g. verify) to another (e.g. run)
+  // in order to prevent executing same queries twice
+  protected Map<String, Boolean> flags = new HashMap<>();
 
-  public final JdbcTemplate template() {
+  protected final JdbcTemplate template() {
     return chain().getTemplate();
   }
 
   protected final MigrationTaskChain chain() {
     return chain;
+  }
+
+  /**
+   *
+   * @return the flags map (across execution phases)
+   */
+  protected final Map<String, Boolean> flags() {
+    return flags;
+  }
+
+  /**
+   * Shortcut checking for flag exist and flag value
+   * @param name
+   * @return
+   */
+  protected final boolean flag(String name) {
+    return flags().containsKey(name) && flags.get(name);
+  }
+  /**
+   *
+   * @return the {@link Logger} for the {@link MigrationTaskChain} this task belongs to
+   */
+  protected final Logger logger() {
+    return chain().logger();
   }
 
   public final boolean hasFailed() {
@@ -70,7 +100,7 @@ public abstract class MigrationTask {
       }
       // logging success
       else {
-        chain().logger().info(
+        logger().info(
             String.format(
                 "%s task ran successfully.",
                 getClass().getSimpleName()
@@ -80,7 +110,7 @@ public abstract class MigrationTask {
     }
     // no need to run / not applicable
     else {
-      chain().logger().info(
+      logger().info(
           String.format(
               "%s task not applicable - skipping.",
               getClass().getSimpleName()
@@ -94,7 +124,7 @@ public abstract class MigrationTask {
    * and/or field values or counts through the chain's common {@link JdbcTemplate}.<br/>
    * Tasks will be skipped if not applicable.
    *
-   * @return {@literal true} if applicable, {@literal false} otherwise.
+   * @return {@literal true} if the task is applicable, {@literal false} otherwise.
    */
   public abstract boolean verify();
 
@@ -129,7 +159,7 @@ public abstract class MigrationTask {
    * flag to {@literal true} - see {@link MigrationTask#hasFailed()}.
    */
   public final void fail() {
-    chain().logger().warn(
+    logger().warn(
         String.format("%s task failed to run", getClass().getSimpleName())
     );
     failed = true;

@@ -30,11 +30,17 @@ public class CreateAndPopulateDefaultPrivileges extends MigrationTask {
     // checks table actually exists - hardly ever useful unless hibernate props are changed, since
     // tables should be automatically created based on entities otherwise
     boolean privilegesTableExists = template()
-        .queryForObject("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_NAME = 'privileges'", Integer.class) == 1;
-    // does not exist - task applicable and returning
+        .queryForObject(
+            "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_NAME = 'privileges'",
+            Integer.class)
+        .equals(1);
+    // saves for run phase
+    flags().put("privilegesTableExists", privilegesTableExists);
+
+    // does not exist - task applicable
     if (!privilegesTableExists) {
       applicable = true;
-      chain().logger().info(
+      logger().info(
           String.format(
               "%s task found no privileges table. Task applicable? %b ",
               getClass().getSimpleName(),
@@ -49,7 +55,7 @@ public class CreateAndPopulateDefaultPrivileges extends MigrationTask {
           .queryForObject("SELECT COUNT(*) FROM privileges", Integer.class);
 
       applicable = privilegesCount != Privilege.DEFAULT_PRIVILEGES.length;
-      chain().logger().info(
+      logger().info(
           String.format(
               "%s task found %d privileges in table. Task applicable? %b ",
               getClass().getSimpleName(),
@@ -64,11 +70,15 @@ public class CreateAndPopulateDefaultPrivileges extends MigrationTask {
 
   @Override
   public boolean run() {
+    // assuming no exception means create / insert successful
     try {
-      // assuming no exception means create / insert successful
-      template().execute(
-          "CREATE TABLE IF NOT EXISTS privileges(privilege BIGINT NOT NULL PRIMARY KEY UNIQUE CHECK ( privilege & (privilege - 1) = 0 ), name VARCHAR(64) NOT NULL UNIQUE);"
-      );
+      // assuming key always present as saved in verify phase
+      if (!flags().get("privilegesTableExists")) {
+        // assuming key always present as saved in verify phase
+        template().execute(
+            "CREATE TABLE privileges(privilege BIGINT NOT NULL PRIMARY KEY UNIQUE CHECK ( privilege & (privilege - 1) = 0 ), name VARCHAR(64) NOT NULL UNIQUE);"
+        );
+      }
       // TODO could be improved by granularly inserting only missing defaults
       template()
           .batchUpdate(
@@ -88,7 +98,7 @@ public class CreateAndPopulateDefaultPrivileges extends MigrationTask {
           );
       return true;
     } catch (DataAccessException dae) {
-      chain().logger().warn(
+      logger().warn(
           String.format("%s task failed to run with exception", getClass().getSimpleName()),
           dae
       );

@@ -33,12 +33,15 @@ public class CreateAndPopulateDefaultNamespaceRoles extends MigrationTask {
         .queryForObject(
             "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_NAME = 'namespace_roles'",
             Integer.class) == 1;
-    // does not exist - task applicable and returning
+    // saves for run phase
+    flags().put("namespaceRolesTableExists", namespaceRolesTableExists);
+
+    // does not exist - task applicable
     if (!namespaceRolesTableExists) {
       applicable = true;
-      chain().logger().info(
+      logger().info(
           String.format(
-              "%s task found no namespace roles table. Task applicable? %b ",
+              "%s task found no namespace_roles table. Task applicable? %b ",
               getClass().getSimpleName(),
               applicable
           )
@@ -51,7 +54,7 @@ public class CreateAndPopulateDefaultNamespaceRoles extends MigrationTask {
           .queryForObject("SELECT COUNT(*) FROM namespace_roles", Integer.class);
 
       applicable = namespaceRolesCount != NamespaceRole.DEFAULT_NAMESPACE_ROLES.length;
-      chain().logger().info(
+      logger().info(
           String.format(
               "%s task found %d namespace roles in table. Task applicable? %b ",
               getClass().getSimpleName(),
@@ -65,11 +68,14 @@ public class CreateAndPopulateDefaultNamespaceRoles extends MigrationTask {
 
   @Override
   public boolean run() {
+    // assuming no exception means create / insert successful
     try {
-      // assuming no exception means create / insert successful
-      template().execute(
-          "CREATE TABLE IF NOT EXISTS namespace_roles(role BIGINT NOT NULL PRIMARY KEY UNIQUE CHECK ( role & (role - 1) = 0 ), name VARCHAR(64) NOT NULL UNIQUE, privileges BIGINT NOT NULL DEFAULT 0);"
-      );
+      // assuming key always present as saved in verify phase
+      if (!flags().get("namespaceRolesTableExists")) {
+        template().execute(
+            "CREATE TABLE namespace_roles(role BIGINT NOT NULL PRIMARY KEY UNIQUE CHECK ( role & (role - 1) = 0 ), name VARCHAR(64) NOT NULL UNIQUE, privileges BIGINT NOT NULL DEFAULT 0);"
+        );
+      }
       // TODO could be improved by granularly inserting only missing defaults
       template()
           .batchUpdate(
@@ -90,7 +96,7 @@ public class CreateAndPopulateDefaultNamespaceRoles extends MigrationTask {
           );
       return true;
     } catch (DataAccessException dae) {
-      chain().logger().warn(
+      logger().warn(
           String.format("%s task failed to run with exception", getClass().getSimpleName()),
           dae
       );

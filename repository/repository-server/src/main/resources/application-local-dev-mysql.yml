@@ -30,8 +30,8 @@ spring:
   jpa:
     show-sql: false
     generate-ddl: true
-  hibernate:
-    ddl-auto: validate
+    hibernate:
+      ddl-auto: none
 
 
 server:
