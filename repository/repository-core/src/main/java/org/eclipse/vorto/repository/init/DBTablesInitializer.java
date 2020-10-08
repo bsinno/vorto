@@ -12,6 +12,8 @@
  */
 package org.eclipse.vorto.repository.init;
 
+import org.eclipse.vorto.repository.init.migration.AddAndPopulateUserCreatedBy;
+import org.eclipse.vorto.repository.init.migration.AddAndPopulateUserTechnicalUser;
 import org.eclipse.vorto.repository.init.migration.CleanupLegacyTables;
 import org.eclipse.vorto.repository.init.migration.CreateAndPopulateDefaultNamespaceRoles;
 import org.eclipse.vorto.repository.init.migration.CreateAndPopulateDefaultPrivileges;
@@ -69,10 +71,10 @@ public class DBTablesInitializer implements ApplicationRunner {
           CreateAndPopulateDefaultNamespaceRoles.class,
           CreateAndPopulateDefaultRepositoryRoles.class,
           // TODO maybe super old migration for user_role? probably unnecessary
-          // TODO technical user
+          AddAndPopulateUserTechnicalUser.class, // TODO this one is not implemented at all
           CreateAndPopulateUserNamespaceRoles.class, // TODO this one is not finished, see run implementation
           MigrateToWorkspaceIDInNamespace.class,
-          // TODO createdBy
+          AddAndPopulateUserCreatedBy.class,
           CleanupLegacyTables.class
       );
     }
