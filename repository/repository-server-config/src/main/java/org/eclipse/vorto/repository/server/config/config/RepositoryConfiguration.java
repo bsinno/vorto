@@ -19,6 +19,7 @@ import org.eclipse.vorto.repository.search.impl.SimpleSearchService;
 import org.eclipse.vorto.repository.utils.LoggingInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.MultipartConfigFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -55,6 +56,14 @@ public class RepositoryConfiguration extends BaseConfiguration {
   public org.modeshape.jcr.RepositoryConfiguration repoConfiguration() throws Exception {
     return org.modeshape.jcr.RepositoryConfiguration
         .read(new ClassPathResource(repositoryConfigFile).getURL());
+  }
+
+  @Bean
+  public MultipartConfigElement multipartConfigElement() {
+    MultipartConfigFactory factory = new MultipartConfigFactory();
+    factory.setMaxFileSize(Long.MAX_VALUE);
+    factory.setMaxRequestSize(Long.MAX_VALUE);
+    return factory.createMultipartConfig();
   }
 
   @Bean
