@@ -93,7 +93,7 @@ public class GHMigrationController {
     public static final String FORMAT_MODEL_FQNAME_FOLDER = "%s/";
     public static final String FORMAT_DSL_FILENAME = "%s%s.%s";
     public static final String FORMAT_JSON_FILENAME = "%s%s.json";
-    public static final String FORMAT_FILE_UNDER_FOLDER = "%s%s";
+    public static final String FORMAT_IMAGE_UNDER_FOLDER = "%s%s.%s";
 
     private static final Logger LOGGER = Logger.getLogger(GHMigrationController.class);
 
@@ -158,7 +158,7 @@ public class GHMigrationController {
                 // model.getFileName() can and usually does return null :|
                 ZipEntry dslEntry = new ZipEntry(
                         String.format(
-                                FORMAT_DSL_FILENAME, folder, model.getDisplayName(), model.getType().toString().toLowerCase()
+                                FORMAT_DSL_FILENAME, folder, "model", model.getType().toString().toLowerCase()
                         )
                 );
                 zos.putNextEntry(dslEntry);
@@ -170,7 +170,7 @@ public class GHMigrationController {
                 ModelContent content = converter.convert(id, Optional.empty());
                 ZipEntry contentEntry = new ZipEntry(
                         String.format(
-                                FORMAT_JSON_FILENAME, folder, "content"
+                                FORMAT_JSON_FILENAME, folder, "model"
                         )
                 );
                 zos.putNextEntry(contentEntry);
@@ -191,22 +191,27 @@ public class GHMigrationController {
                             .getRepositoryByModel(id)
                             .getAttachmentsByTag(id, Attachment.TAG_IMAGE);
                 }
-                for (Attachment a : imageAttachments) {
+                //for (Attachment a : imageAttachments) {
+                if (!imageAttachments.isEmpty()) {
+                    String fileName = imageAttachments.get(0).getFilename();
                     LOGGER.info(
                             String.format(
                                     "Model [%s]: creating image file for [%s]", model.getFullQualifiedFileName(),
-                                    a.getFilename()
+                                    fileName
                             )
                     );
                     factory
                             .getRepositoryByModel(id)
-                            .getAttachmentContent(id, a.getFilename())
+                            .getAttachmentContent(id, fileName)
                             .ifPresent(
                                     fc -> {
                                         try {
                                             ZipEntry imageEntry = new ZipEntry(
                                                     String.format(
-                                                            FORMAT_FILE_UNDER_FOLDER, folder, a.getFilename()
+                                                            FORMAT_IMAGE_UNDER_FOLDER,
+                                                            folder,
+                                                            "image",
+                                                            fileName.substring(fileName.lastIndexOf("."))
                                                     )
                                             );
                                             zos.putNextEntry(imageEntry);
@@ -216,7 +221,7 @@ public class GHMigrationController {
                                                     String.format(
                                                             "Model [%s]: could not create image file for [%s] -- aborting (see exception logs)",
                                                             model.getFullQualifiedFileName(),
-                                                            a.getFilename()
+                                                            fileName
                                                     )
                                             );
                                             throw new RuntimeException(ioe);
